@@ -1,4 +1,4 @@
-module BusState where
+module ODMatrix.Sim.BusState where
 
 
   import Control.Monad.State
@@ -6,7 +6,7 @@ module BusState where
   import System.Random.Shuffle
   import Data.List (sort, group)
 
-  import Poisson
+  import ODMatrix.Sim.Poisson
 
 
   type AnB = (Int, Int) -- Sim result
@@ -65,26 +65,29 @@ module BusState where
     bus <- get    -- Get the current state from the monadic context
     
     -- Make the processing: Get the value and update the state
-    modify nextCell
-
+    
     let nb = fst $ random bg
     modify $ board nb
-
+    
     let mx = nb + onBoard bus
         mn = mx - k
         na = min mx . max mn . fst $ random ag
     modify $ alight na
     
+    modify nextCell
+
     return (nb,na)  -- Wrap the result into the monad
 
 
 
-  busSim :: Int         -- ^ Capacity
+  busSim :: Num a 
+         => Int         -- ^ Capacity
          -> [Double]    -- ^ Boarding lambdas
          -> [Double]    -- ^ Alighting lambdas
          -> Int         -- ^ Seed
-         -> [((Int,Int),Int)] -- ^ Sim Result
-  busSim k bs as s = map (\l -> (head l, length l)) . group . sort . odlist $ snd fs
+         -> [((Int,Int), a)] -- ^ Sim Result
+  busSim k bs as s = 
+    map (\l -> (head l, fromIntegral $ length l)) . group . sort . odlist $ snd fs
     where fs = runState (sequence $ zipWith (busStep k) bgs ags) startBusSt
           [sb,sa] = take 2 $ randoms (mkStdGen s)
           bgs = mkPoissonGens sb bs

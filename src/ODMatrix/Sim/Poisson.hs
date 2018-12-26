@@ -1,5 +1,5 @@
 -- Generate values with a Poisson distribution.
-module Poisson where
+module ODMatrix.Sim.Poisson where
 
   import System.Random
 
