@@ -1,0 +1,45 @@
+cabal-version: >= 1.10
+
+-- This file has been generated from package.yaml by hpack version 0.29.7.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 05e77b3c43b7c4863a25cd177ed3ca0a125b0db875ccbe2174ca0d885422c8f5
+
+name:           odmatrix-sim
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/renecura/odmatrix-sim#readme>
+homepage:       https://github.com/renecura/odmatrix-sim#readme
+bug-reports:    https://github.com/renecura/odmatrix-sim/issues
+author:         Rodrigo René Cura
+maintainer:     rodrigo.renecura@gmail.com
+copyright:      2018 Rodrigo René Cura
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/renecura/odmatrix-sim
+
+library
+  exposed-modules:
+      Poisson BusState
+  other-modules:
+      BusState
+      CSVMapParser
+      Poisson
+      RouteReader
+      Paths_odmatrix_sim
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , mtl
+    , odmatrix-sim
+    , random
+    , random-shuffle
+  default-language: Haskell2010
