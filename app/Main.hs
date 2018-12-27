@@ -29,7 +29,19 @@ module Main where
   }
 
 
-  
+  getLambdas :: RandomGen g => Bool -> g -> Int -> Int -> IO ([Double],[Double])
+  getLambdas False g n k = do -- Random genetated
+    let (bg,ag) = split g
+        bs = take n $ randomRs (0,fromIntegral k) bg
+        as = take n $ randomRs (0,fromIntegral k) ag
+    return (bs, as) 
+  getLambdas True _ n _ = do  -- Manually provided
+    input <- getContents
+    let ls = lines input
+        bs = take n ls
+        as = take n $ drop n ls
+    return (map read bs, map read as)
+
 
 
 
@@ -47,9 +59,7 @@ module Main where
                 then "# Reading lambdas..."
                 else "# Generating randoms lambdas..."
 
-    let (bg,ag) = split g1
-        bs = take n $ randomRs (0,fromIntegral k) bg
-        as = take n $ randomRs (0,fromIntegral k) ag
+    (bs,as) <- getLambdas manual_lambdas g1 n k
 
     putStrLn "# Boarding lambdas"
     mapM_ (putStrLn . show) bs
