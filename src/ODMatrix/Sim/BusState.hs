@@ -2,6 +2,7 @@ module ODMatrix.Sim.BusState where
 
 
   import Control.Monad.State
+  import Data.Functor.Identity (Identity)
   import System.Random
   import System.Random.Shuffle
   import Data.List (sort, group)
@@ -30,14 +31,7 @@ module ODMatrix.Sim.BusState where
 
   onBoard :: BusSt -> Int
   onBoard = length . passengers
-
-  -- freeSpace :: Bus -> Int
-  -- freeSpace b = (capacity b) - (onBoard b)
-
-
-  -- -- samplePassengers :: Bus -> Int -> [Int]
-  -- -- samplePassengers b n = []
-  
+ 
   board :: Int -> BusSt -> BusSt
   board n b = b {passengers = passengers b ++ np}
     where np = replicate n $ currentCell b
@@ -57,21 +51,24 @@ module ODMatrix.Sim.BusState where
 
 
   busStep :: Int        -- ^ Capacity
+          -> Int        -- ^ Number of cells
           -> PoissonGen -- ^ Generator of boardings
           -> PoissonGen -- ^ Generator of alightings
           -> State BusSt (Int, Int)
-  busStep k bg ag = do
+  busStep k n bg ag = do
 
     bus <- get    -- Get the current state from the monadic context
+    let current = currentCell bus
     
-    -- Make the processing: Get the value and update the state
-    
+    -- Make the processing: Get the value and update the state    
     let nb = fst $ random bg
     modify $ board nb
     
     let mx = nb + onBoard bus
         mn = mx - k
-        na = min mx . max mn . fst $ random ag
+        na = if (current + 1) == n 
+              then mx 
+              else min mx . max mn . fst $ random ag
     modify $ alight na
     
     modify nextCell
@@ -80,28 +77,48 @@ module ODMatrix.Sim.BusState where
 
 
 
-  busSim :: Num a 
-         => Int         -- ^ Capacity
-         -> [Double]    -- ^ Boarding lambdas
-         -> [Double]    -- ^ Alighting lambdas
-         -> Int         -- ^ Seed
-         -> [((Int,Int), a)] -- ^ Sim Result
-  busSim k bs as s = 
-    map (\l -> (head l, fromIntegral $ length l)) . group . sort . odlist $ snd fs
-    where fs = runState (sequence $ zipWith (busStep k) bgs ags) startBusSt
-          [sb,sa] = take 2 $ randoms (mkStdGen s)
-          bgs = mkPoissonGens sb bs
-          ags = mkPoissonGens sa as
+  busSim :: (Num a, RandomGen g) 
+         => Int               -- ^ Capacity
+         -> [Double]          -- ^ Boarding lambdas
+         -> [Double]          -- ^ Alighting lambdas
+         -> g                 -- ^ Random generator
+         -> [((Int,Int), a)]  -- ^ Sim Result
+  busSim k bs as g = 
+    map wrapUp . group . sort . odlist $
+    execState (sequence $ mkSequence k bs as g) startBusSt
+    where wrapUp l = (head l, fromIntegral $ length l)
 
   
+  busSims :: (Num a, RandomGen g) 
+          => Int                  -- ^ Capacity
+          -> [Double]             -- ^ Boarding lambdas
+          -> [Double]             -- ^ Alighting lambdas
+          -> g                    -- ^ Random generator
+          -> [[((Int,Int), a)]]   -- ^ Sim Result
+  busSims k bs as g = map (busSim k bs as) sq
+    where sq = iterate (evalState $ state split) g
+
+
+  mkSequence :: RandomGen g 
+             => Int
+             -> [Double]
+             -> [Double]
+             -> g
+             -> [State BusSt (Int, Int)]
+  mkSequence k bs as g0 = zipWith (busStep k n) bgs ags
+    where bgs = mkPoissonGens sb bs
+          ags = mkPoissonGens sa as
+          n = min (length bs) (length as) -- Number of cells in the route
+          (sb,g1) = random g0             -- Random seed for boardings
+          sa = fst $ random g1            -- Random seed for alightings
 
 
   
   -- Cells randoms
 
-  -- Given a list of lambdas, generates a list of differents Poisson generatos with the respective lambdas.
+  -- Given a list of lambdas, generates a list of differents Poisson generators with the respective lambdas.
   mkPoissonGens :: Int          -- ^ Seed
                 -> [Double]     -- ^ Lambdas
-                -> [PoissonGen] -- ^ List of poisson generators
+                -> [PoissonGen] -- ^ List of Poisson generators
   mkPoissonGens seed ls = 
     zipWith mkPoissonGen (randoms $ mkStdGen seed) ls
