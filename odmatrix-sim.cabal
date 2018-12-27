@@ -4,7 +4,7 @@ cabal-version: >= 1.10
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 97a4dfabbd6b8254bf78916c16aac4da0e161b6408df3e0d8776169eda005b2d
+-- hash: 510d23d98a0c30cd7142a29510a45fa514881d65bb55bf1dc9bcce0735eba255
 
 name:           odmatrix-sim
 version:        0.1.0.1
@@ -31,6 +31,7 @@ library
       ODMatrix.Sim.Poisson
   hs-source-dirs:
       src
+  ghc-options: -O2
   build-depends:
       base >=4.7 && <5
     , hmatrix
@@ -45,9 +46,10 @@ executable odmatrix-sim-exe
       Paths_odmatrix_sim
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -XDeriveDataTypeable -O2
   build-depends:
       base >=4.7 && <5
+    , cmdargs
     , hmatrix
     , mtl
     , odmatrix-sim

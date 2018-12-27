@@ -25,11 +25,6 @@ dependencies:
 - mtl
 - random-shuffle
 - hmatrix
-# - odmatrix
-# - containers
-# - bytestring
-# - array
-# - MissingH
 
 library:
   source-dirs: src
@@ -37,11 +32,9 @@ library:
     ODMatrix.Sim.BusState
   other-modules:
     ODMatrix.Sim.Poisson
-    
-  
-
-    
-    
+  ghc-options:
+    - -O2
+   
 
 executables:
   odmatrix-sim-exe:
@@ -51,8 +44,11 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -XDeriveDataTypeable
+    - -O2
     dependencies:
     - odmatrix-sim
+    - cmdargs
 
 # executables:
 #   odmatrix-sim-exe:
