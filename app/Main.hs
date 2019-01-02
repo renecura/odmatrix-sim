@@ -25,7 +25,7 @@ module Main where
     capacity = 50 &= help "Capacity of the unit",
     seed = 0 &= help "Seed for the simulation",
     cases = 10 &= help "Number of cases to simulate",
-    lambdas = False &= help "Indicates if the lists of lambdas gone to be provided manually"
+    lambdas = False &= help "Indicates if the lists of lambdas will be provided manually"
   }
 
 
