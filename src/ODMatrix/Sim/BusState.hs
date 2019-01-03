@@ -5,7 +5,7 @@ module ODMatrix.Sim.BusState where
   import Data.Functor.Identity (Identity)
   import System.Random
   import System.Random.Shuffle
-  import Data.List (sort, group)
+  import Data.List (sort, group, delete)
 
   import ODMatrix.Sim.Poisson
 
@@ -37,16 +37,35 @@ module ODMatrix.Sim.BusState where
     where np = replicate n $ currentCell b
 
   -- TODO: El Shuffle es muy arbitrario para la seleccion de pasajeros. I need to be more toughful about that, I will refactor this later.
-  alight :: Int -> BusSt -> BusSt
-  alight n b = b {
+  alight :: RandomGen g => g -> Int -> BusSt -> BusSt
+  alight g n b = b {
     passengers = drop n $ passengers b,
     odlist = odlist b ++ zip (take n $ ps) (replicate n $ currentCell b)
     }
-    where ps = shuffle' (passengers b) (length $ passengers b) (mkStdGen 42)
+    where ps = shuffle' (passengers b) (length $ passengers b) g
+    -- where (sample, nb) = busSampleN n (currentCell b) (mkStdGen 42) (passengers b)
 
 
   -- addOD :: (Int,Int) -> Bus -> Bus
   -- addOD od b = b {odlist = od : odlist b}
+
+  busSampleN :: RandomGen a       
+             => Int             -- Sample size
+             -> Int             -- Current cell
+             -> a               -- Random generator
+             -> [Int]           -- Current list of passenger
+             -> ([Int], [Int])  -- (Sample, new Passenger list)
+  busSampleN n c g bus = (rs,bus')
+    where (rs,(_,bus')) = runState sq (g, bus)
+          sq = (sequence $ replicate n (state $ busSample c))
+
+
+  busSample _ (_,[]) = error "empty list"
+  busSample current (g, xs) = (e, (g2, delete e xs))
+    where ps = join $ map (\x -> replicate (current - x) x) xs 
+          e = head $ shuffle' ps (length ps) g1
+          (g1,g2) = split g
+          
 
 
 
@@ -66,10 +85,11 @@ module ODMatrix.Sim.BusState where
     
     let mx = nb + onBoard bus
         mn = mx - k
+        (ag1,ag2) = split ag
         na = if (current + 1) == n 
-              then mx 
-              else min mx . max mn . fst $ random ag
-    modify $ alight na
+             then mx 
+             else min mx . max mn . fst $ random ag1        
+    modify $ alight ag2 na
     
     modify nextCell
 

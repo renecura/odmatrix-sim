@@ -5,6 +5,7 @@ module Main where
   import System.Random
   import Numeric.LinearAlgebra (Matrix, assoc, Z, toLists)
   import Control.Monad (join)
+  import Data.Char (toLower)
 
   import System.Console.CmdArgs.Implicit
   
@@ -47,27 +48,52 @@ module Main where
 
   main :: IO ()
   main = do
-    putStrLn "# ODMatrix Simulation"
+    -- ODMatrix Simulation
+    putStrLn "{"
 
     args <- cmdArgs params
-    print args
-
+    
     let (Params n k seed cases manual_lambdas) = args
         (g1, g2) = split $ mkStdGen seed
 
-    putStrLn $  if manual_lambdas 
-                then "# Reading lambdas..."
-                else "# Generating randoms lambdas..."
+    putStrLn "\"params\": {"
+    putStrLn $ "\"size\":" ++ (show n) ++ "," 
+    putStrLn $ "\"capacity\":" ++ (show k) ++ "," 
+    putStrLn $ "\"seed\":" ++ (show seed) ++ "," 
+    putStrLn $ "\"cases\":" ++ (show cases) ++ "," 
+    putStrLn $ "\"manual_lambdas\":" ++ (map toLower $ show manual_lambdas)
+    putStrLn "},"
+
+    -- putStrLn $  if manual_lambdas 
+    --             then "# Reading lambdas..."
+    --             else "# Generating randoms lambdas..."
 
     (bs,as) <- getLambdas manual_lambdas g1 n k
 
-    putStrLn "# Boarding lambdas"
-    mapM_ (putStrLn . show) bs
-    putStrLn "# Alighting lambdas"
-    mapM_ (putStrLn . show) as
+    putStrLn "\"lambdas\" : {"
+    
+    -- Boarding lambdas
+    putStr "\"boards\": "    
+    putStr . show $ bs
+    putStrLn ","
+    
+    -- Alighting lambdas
+    putStr "\"alights\": "    
+    putStrLn . show $ as
 
-    putStrLn "# Generating origin destination matrices..."
+    putStrLn "},"
+
+
+    -- Generating origin destination matrices
     
-    
+    putStrLn "\"odms\": {"
     let ms = map (assoc (n,n) 0) (busSims k bs as g2) :: [Matrix Z]
-    mapM_ (putStrLn . init . tail . show) . take cases . map (join . toLists) $ ms
+        ms' = map (\(i,m) -> "\"" ++ (show i) ++ "\": " ++ (show m) ++ ",\n") .
+              zip [0..] .
+              take cases . map (join . toLists) $ ms
+
+
+    putStrLn . init . init . join $ ms'
+    putStrLn "}"
+    
+    putStrLn "}"
